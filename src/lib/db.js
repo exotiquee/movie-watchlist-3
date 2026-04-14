@@ -1,12 +1,12 @@
 import { MongoClient, ObjectId } from "mongodb"; // See https://www.mongodb.com/docs/drivers/node/current/quick-start/
-import { DB_URI } from "$env/dynamic/private";
+import { env } from "$env/dynamic/private";
 
 let client;
 let db;
 
 async function getDb() {
   if (!db) {
-    client = new MongoClient(DB_URI);
+    client = new MongoClient(env.DB_URI);
     await client.connect();
     db = client.db("ScreenStackDB");
   }
