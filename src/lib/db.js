@@ -1,10 +1,17 @@
 import { MongoClient, ObjectId } from "mongodb"; // See https://www.mongodb.com/docs/drivers/node/current/quick-start/
-import { DB_URI } from "$env/static/private";
+import { DB_URI } from "$env/dynamic/private";
 
-const client = new MongoClient(DB_URI);
+let client;
+let db;
 
-await client.connect();
-const db = client.db("ScreenStackDB"); // select database
+async function getDb() {
+  if (!db) {
+    client = new MongoClient(DB_URI);
+    await client.connect();
+    db = client.db("ScreenStackDB");
+  }
+  return db;
+}
 
 //////////////////////////////////////////
 // Movies
@@ -14,7 +21,7 @@ const db = client.db("ScreenStackDB"); // select database
 async function getMovies() {
   let movies = [];
   try {
-    const collection = db.collection("movies");
+    const collection = (await getDb()).collection("movies");
 
     // You can specify a query/filter here
     // See https://www.mongodb.com/docs/drivers/node/current/fundamentals/crud/query-document/
@@ -36,7 +43,7 @@ async function getMovies() {
 async function getMovie(id) {
   let movie = null;
   try {
-    const collection = db.collection("movies");
+    const collection = (await getDb()).collection("movies");
     const query = { _id: new ObjectId(id) }; // filter by id
     movie = await collection.findOne(query);
 
@@ -67,7 +74,7 @@ async function createMovie(movie) {
   movie.actors = [];
   movie.watchlist = false;
   try {
-    const collection = db.collection("movies");
+    const collection = (await getDb()).collection("movies");
     const result = await collection.insertOne(movie);
     return result.insertedId.toString(); // convert ObjectId to String
   } catch (error) {
@@ -99,7 +106,7 @@ async function updateMovie(movie) {
   try {
     let id = movie._id;
     delete movie._id; // delete the _id from the object, because the _id cannot be updated
-    const collection = db.collection("movies");
+    const collection = (await getDb()).collection("movies");
     const query = { _id: new ObjectId(id) }; // filter by id
     const result = await collection.updateOne(query, { $set: movie });
 
@@ -121,7 +128,7 @@ async function updateMovie(movie) {
 // returns: id of the deleted movie or null, if movie could not be deleted
 async function deleteMovie(id) {
   try {
-    const collection = db.collection("movies");
+    const collection = (await getDb()).collection("movies");
     const query = { _id: new ObjectId(id) }; // filter by id
     const result = await collection.deleteOne(query);
 
